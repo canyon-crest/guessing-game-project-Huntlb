@@ -5,7 +5,6 @@ let scores = [];
 let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
 const levelArr = document.getElementsByName('level');
-date.textContent = time()
 playBtn.addEventListener('click', play)
 guessBtn.addEventListener('click', makeGuess);
 
@@ -33,19 +32,37 @@ function determineSuffix(date){
 }
 
 function time(){
-    let d = new Date();
-    let suffix;
-    if (d.getDate()[d.getDate().length - 1] == 1){
-        suffix = "st"
-    }
-    let str = months[d.getMonth()] + " " + d.getDate() + determineSuffix(d.getDate()) + ", " + d.getFullYear();
-    return str;
+    const d = new Date();
+    // date prefix: Month DaySuffix, Year
+    const dateStr = months[d.getMonth()] + " " + d.getDate() + determineSuffix(d.getDate()) + ", " + d.getFullYear();
+
+    // 12-hour time with leading zeros for minutes/seconds
+    let hours = d.getHours();
+    const ampm = hours < 12 ? 'AM' : 'PM';
+    hours = hours % 12;
+    if (hours === 0) hours = 12; // 12-hour clock
+
+    const pad = (n) => n.toString().padStart(2, '0');
+    const timeStr = hours + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds()) + " " + ampm;
+
+    return dateStr + " " + timeStr;
 }
 
+// Live-update the #date element every second
+const dateEl = document.getElementById('date');
+function updateClock(){
+    if (dateEl) dateEl.textContent = time();
+}
+// initialize immediately and then every second
+updateClock();
+setInterval(updateClock, 1000);
+
+let currentTime;
 function play(){
     playBtn.disabled = true;
     guessBtn.disabled = false;
     guess.disabled = false;
+    currentTime = Date.now();
     for(let i = 0; i <levelArr.length; i++){
         levelArr[i].disabled = true;
         if(levelArr[i].checked){
@@ -75,7 +92,9 @@ function makeGuess(){
     } else if (userGuess > answer){
         msg.textContent = "Too high!"
     } else{
-        msg.textContent = "WOW CONGRATS. Took you " + score + " guesses!"
+        finalTime = Date.now() - currentTime;
+
+        msg.innerHTML = "WOW CONGRATS. Took you " + score + " guesses!<br>Time taken: " + (finalTime/1000).toFixed(2) + " seconds."
         reset()
         updateScore();
     }
@@ -112,6 +131,17 @@ function updateScore(){
 
     wins.textContent = "Total Wins: " + totalWins
 
+
+    const fastestWinEl = document.getElementById('fastestwin');
+    if (fastestWinEl) {
+        if (!fastestWinEl.textContent || finalTime < parseFloat(fastestWinEl.textContent)) {
+            fastestWinEl.textContent = (finalTime/1000).toFixed(2)
+            document.getElementById('extraDate').textContent =  " seconds at " + time();
+        } else{
+            console.log("Slower time")
+            console.log(finalTime/1000)
+        }
+    }
 
     
 }
